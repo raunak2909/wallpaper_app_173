@@ -2,35 +2,46 @@
 
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as httpClient;
 import 'package:wallpaper_app/models/api_model.dart';
+import 'package:wallpaper_app/screen/category_Screen.dart';
+import 'package:wallpaper_app/screen/variables.dart';
+import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class MyHomeScreen extends StatefulWidget {
   const MyHomeScreen({super.key});
-
   @override
   State<MyHomeScreen> createState() => _MyHomeScreenState();
 }
 
 class _MyHomeScreenState extends State<MyHomeScreen> {
+  WallpaperDataModel? wallpaperDataModel;
+  WallpaperDataModel? categoryDataModel;
+
   @override
   void initState() {
     super.initState();
-    getPhotosByCategory();
+    getPhotosByCategory('nature');
+    getPhotosByCategory('popular-searches');
   }
 
-  WallpaperDataModel? wallpaperDataModel;
-
-  getPhotosByCategory() async {
+  getPhotosByCategory(String category) async {
     var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
-    var uri = Uri.parse('https://api.pexels.com/v1/search?query=Nature');
+    var uri = Uri.parse('https://api.pexels.com/v1/search?query=$category');
     var response =
         await httpClient.get(uri, headers: {"Authorization": apiKey});
     if (response.statusCode == 200) {
-      var rowData = jsonDecode(response.body);
-      wallpaperDataModel = WallpaperDataModel.fromJson(rowData);
-      setState(() {});
+      if (category != 'popular-searches') {
+        var rowData = jsonDecode(response.body);
+        wallpaperDataModel = WallpaperDataModel.fromJson(rowData);
+        setState(() {});
+      } else {
+        var rowData = jsonDecode(response.body);
+        categoryDataModel = WallpaperDataModel.fromJson(rowData);
+        setState(() {});
+      }
     }
   }
 
@@ -39,7 +50,10 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     return Scaffold(
       appBar: AppBar(),
       backgroundColor: Colors.white,
-      body: wallpaperDataModel != null && wallpaperDataModel!.photos!.isNotEmpty
+      body: wallpaperDataModel != null &&
+              wallpaperDataModel!.photos!.isNotEmpty &&
+              categoryDataModel != null &&
+              categoryDataModel!.photos!.isNotEmpty
           ? SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,22 +86,39 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: wallpaperDataModel!.photos!.length,
+        itemCount: categoryDataModel!.photos!.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2, childAspectRatio: 3 / 2),
         itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.green,
-                  image: DecorationImage(
-                      image: NetworkImage(wallpaperDataModel!
-                          .photos![index].src!.landscape
-                          .toString()),
-                      fit: BoxFit.cover)),
-              height: 120,
+            child: InkWell(
+              onTap: () {
+                selectedIndex = index;
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return CategoryScreen(
+                      isCategory: true,
+                    );
+                  },
+                ));
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                        image: NetworkImage(
+                            '${categoryDataModel!.photos![index].src!.landscape}'),
+                        fit: BoxFit.cover),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.green),
+                height: 120,
+                child: Center(
+                    child: Text(
+                  listCategory[index],
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.white),
+                )),
+              ),
             ),
           );
         },
@@ -113,14 +144,26 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
               childAspectRatio: 1.9 / 1.19,
               crossAxisCount: 1),
           itemBuilder: (context, index) {
-            return Container(
-              decoration: BoxDecoration(
-                  color: Colors.green.shade200,
-                  image: DecorationImage(
-                      image: NetworkImage(
-                          '${wallpaperDataModel!.photos![index].src!.portrait}'),
-                      fit: BoxFit.cover),
-                  borderRadius: BorderRadius.circular(12)),
+            return InkWell(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return WallpaperView(
+                      image: wallpaperDataModel!.photos![index].src!.portrait
+                          .toString(),
+                    );
+                  },
+                ));
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.green.shade200,
+                    image: DecorationImage(
+                        image: NetworkImage(
+                            '${wallpaperDataModel!.photos![index].src!.portrait}'),
+                        fit: BoxFit.cover),
+                    borderRadius: BorderRadius.circular(12)),
+              ),
             );
           },
         ),
@@ -154,6 +197,11 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
       padding: const EdgeInsets.all(12),
       child: TextField(
         decoration: InputDecoration(
+            suffixIcon: const Icon(
+              CupertinoIcons.search,
+              color: Colors.grey,
+              size: 29,
+            ),
             hintText: 'Find Wallpaper...',
             hintStyle: TextStyle(color: Colors.grey.withOpacity(0.4)),
             filled: true,
@@ -170,21 +218,43 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
         height: 65,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            scrollDirection: Axis.horizontal,
-            itemCount: Colors.accents.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: Container(
-                    width: 65,
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.primaries[index])),
-              );
-            },
+          child: Row(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                scrollDirection: Axis.horizontal,
+                itemCount: listColor.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        selectedIndex = index;
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  CategoryScreen(isCategory: false),
+                            ));
+                      },
+                      child: Container(
+                          width: 65,
+                          decoration: BoxDecoration(
+                              border: listColor[index] == Colors.white
+                                  ? Border.all(color: Colors.black)
+                                  : null,
+                              borderRadius: BorderRadius.circular(12),
+                              color: listColor[index])),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(
+                width: 10,
+              )
+            ],
           ),
         ));
   }
