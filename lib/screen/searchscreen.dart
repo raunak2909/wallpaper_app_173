@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as httpClient;
 import 'package:wallpaper_app/models/api_model.dart';
-import 'package:wallpaper_app/screen/homeScreen.dart';
 import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -23,7 +22,9 @@ class _SearchScreenState extends State<SearchScreen> {
     getAllSearchResults(search: '${widget.upComingsearch}');
   }
 
-  getAllSearchResults({required String search,}) async {
+  getAllSearchResults({
+    required String search,
+  }) async {
     var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
     var uri = Uri.parse('https://api.pexels.com/v1/search?query=$search');
     var response =
