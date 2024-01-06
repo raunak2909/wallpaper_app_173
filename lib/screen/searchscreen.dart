@@ -25,7 +25,7 @@ class _SearchScreenState extends State<SearchScreen> {
   getAllSearchResults({
     required String search,
   }) async {
-    var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
+    var apiKey = "WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
     var uri = Uri.parse('https://api.pexels.com/v1/search?query=$search');
     var response =
         await httpClient.get(uri, headers: {"Authorization": apiKey});

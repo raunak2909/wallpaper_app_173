@@ -4,7 +4,9 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as httpClient;
+import 'package:wallpaper_app/bloc/wallpaper_bloc.dart';
 import 'package:wallpaper_app/models/api_model.dart';
 import 'package:wallpaper_app/screen/category_Screen.dart';
 import 'package:wallpaper_app/screen/searchscreen.dart';
@@ -24,11 +26,12 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
   @override
   void initState() {
     super.initState();
-    getPhotosCurated();
+    //getPhotosCurated();
+    BlocProvider.of<WallpaperBloc>(context).add(GetTrendingWallpaper());
     getPhotosByCategory('popular-searches');
   }
 
-  getPhotosCurated() async {
+ /* getPhotosCurated() async {
     var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
     var uri = Uri.parse('https://api.pexels.com/v1/curated');
     var response =
@@ -38,7 +41,7 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
       wallpaperDataModel = WallpaperDataModel.fromJson(rowData);
       setState(() {});
     }
-  }
+  }*/
 
   getPhotosByCategory(String category) async {
     var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
@@ -57,11 +60,7 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     return Scaffold(
       appBar: AppBar(),
       backgroundColor: Colors.white,
-      body: wallpaperDataModel != null &&
-              wallpaperDataModel!.photos!.isNotEmpty &&
-              categoryDataModel != null &&
-              categoryDataModel!.photos!.isNotEmpty
-          ? SingleChildScrollView(
+      body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -71,11 +70,11 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                   theColorToneTitle(),
                   theColorTone(context),
                   categoryTitle(),
-                  categoryView()
+                  //categoryView()
                 ],
               ),
             )
-          : const Center(child: CircularProgressIndicator.adaptive()),
+          //: const Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 
@@ -166,49 +165,65 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     );
   }
 
-  Container bestofMonthView() {
-    return Container(
-      // width: 200,
-      height: 220,
-      padding: const EdgeInsets.only(left: 10, top: 10),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+  Widget bestofMonthView() {
+    return BlocBuilder<WallpaperBloc, WallpaperState>(
+  builder: (context, state) {
+    if(state is WallpaperLoadingState){
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    } else if(state is WallpaperErrorState){
+      return Center(
+        child: Text(state.errorMsg),
+      );
+    } else if(state is WallpaperLoadedState){
+      wallpaperDataModel = state.mData;
+      return Container(
+        // width: 200,
+        height: 220,
+        padding: const EdgeInsets.only(left: 10, top: 10),
+        child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          itemCount: wallpaperDataModel!.photos!.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 1.9 / 1.19,
-              crossAxisCount: 1),
-          itemBuilder: (context, index) {
-            return InkWell(
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return WallpaperView(
-                      image: wallpaperDataModel!.photos![index].src!.portrait
-                          .toString(),
-                    );
-                  },
-                ));
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Colors.green.shade200,
-                    image: DecorationImage(
-                        image: NetworkImage(
-                            '${wallpaperDataModel!.photos![index].src!.portrait}'),
-                        fit: BoxFit.cover),
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            );
-          },
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            scrollDirection: Axis.horizontal,
+            itemCount: wallpaperDataModel!.photos!.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 1.9 / 1.19,
+                crossAxisCount: 1),
+            itemBuilder: (context, index) {
+              return InkWell(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return WallpaperView(
+                        image: wallpaperDataModel!.photos![index].src!.portrait
+                            .toString(),
+                      );
+                    },
+                  ));
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.green.shade200,
+                      image: DecorationImage(
+                          image: NetworkImage(
+                              '${wallpaperDataModel!.photos![index].src!.portrait}'),
+                          fit: BoxFit.cover),
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
+    return Container();
+  },
+);
   }
 
   Padding theColorToneTitle() {

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wallpaper_app/bloc/wallpaper_bloc.dart';
+import 'package:wallpaper_app/data_source/remote/api_helper.dart';
 import 'package:wallpaper_app/screen/homeScreen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(BlocProvider(
+    create: (context) => WallpaperBloc(apiHelper: ApiHelper()),
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
