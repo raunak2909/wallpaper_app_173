@@ -1,10 +1,11 @@
+// ignore_for_file: library_prefixes, must_be_immutable
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:wallpaper_app/models/api_model.dart';
-import 'package:wallpaper_app/screen/homeScreen.dart';
 import 'package:http/http.dart' as httpClient;
-import 'package:wallpaper_app/screen/variables.dart';
+import 'package:wallpaper_app/constrain/variables.dart';
 import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -16,7 +17,6 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   WallpaperDataModel? wallpaperDataModel;
-
   @override
   void initState() {
     super.initState();
@@ -24,10 +24,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (widget.isCategory) {
       getPhotosByCategory(listCategory[selectedIndex]);
     } else {
-      getPhotosByCategory(listColorCategory[selectedIndex]);
+      getPhotosByCategory(
+        listColorModel[selectedIndex].name.toString(),
+      );
     }
   }
 
+// ,mcolor: listColorModel[selectedIndex].name.toString()
   getPhotosByCategory(String category) async {
     var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
     var uri = Uri.parse('https://api.pexels.com/v1/search?query=$category');
@@ -47,7 +50,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         title: Text(
           widget.isCategory
               ? listCategory[selectedIndex]
-              : listColorCategory[selectedIndex],
+              : listColorModel[selectedIndex].name.toString(),
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
       ),
@@ -88,7 +91,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ));
             },
             child: Container(
-              
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(

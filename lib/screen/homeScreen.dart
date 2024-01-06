@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as httpClient;
 import 'package:wallpaper_app/models/api_model.dart';
 import 'package:wallpaper_app/screen/category_Screen.dart';
-import 'package:wallpaper_app/screen/variables.dart';
+import 'package:wallpaper_app/screen/searchscreen.dart';
+import 'package:wallpaper_app/constrain/variables.dart';
 import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class MyHomeScreen extends StatefulWidget {
@@ -18,13 +19,25 @@ class MyHomeScreen extends StatefulWidget {
 
 class _MyHomeScreenState extends State<MyHomeScreen> {
   WallpaperDataModel? wallpaperDataModel;
+  TextEditingController searchController = TextEditingController();
   WallpaperDataModel? categoryDataModel;
-
   @override
   void initState() {
     super.initState();
-    getPhotosByCategory('nature');
+    getPhotosCurated();
     getPhotosByCategory('popular-searches');
+  }
+
+  getPhotosCurated() async {
+    var apiKey = " WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
+    var uri = Uri.parse('https://api.pexels.com/v1/curated');
+    var response =
+        await httpClient.get(uri, headers: {"Authorization": apiKey});
+    if (response.statusCode == 200) {
+      var rowData = jsonDecode(response.body);
+      wallpaperDataModel = WallpaperDataModel.fromJson(rowData);
+      setState(() {});
+    }
   }
 
   getPhotosByCategory(String category) async {
@@ -33,15 +46,9 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     var response =
         await httpClient.get(uri, headers: {"Authorization": apiKey});
     if (response.statusCode == 200) {
-      if (category != 'popular-searches') {
-        var rowData = jsonDecode(response.body);
-        wallpaperDataModel = WallpaperDataModel.fromJson(rowData);
-        setState(() {});
-      } else {
-        var rowData = jsonDecode(response.body);
-        categoryDataModel = WallpaperDataModel.fromJson(rowData);
-        setState(() {});
-      }
+      var rowData = jsonDecode(response.body);
+      categoryDataModel = WallpaperDataModel.fromJson(rowData);
+      setState(() {});
     }
   }
 
@@ -58,17 +65,50 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  searchTextField(),
+                  homeScreenSearchTextField(context),
                   bestofMonthTitle(),
                   bestofMonthView(),
                   theColorToneTitle(),
-                  theColorTone(),
+                  theColorTone(context),
                   categoryTitle(),
                   categoryView()
                 ],
               ),
             )
           : const Center(child: CircularProgressIndicator.adaptive()),
+    );
+  }
+
+  Padding homeScreenSearchTextField(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+            suffixIcon: IconButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return SearchScreen(
+                      upComingsearch: searchController.text.toString(),
+                    );
+                  },
+                ));
+              },
+              icon: const Icon(
+                CupertinoIcons.search,
+                color: Colors.grey,
+                size: 29,
+              ),
+            ),
+            hintText: 'Find Wallpaper...',
+            hintStyle: TextStyle(color: Colors.grey.withOpacity(0.4)),
+            filled: true,
+            fillColor: const Color(0xffeef3f5),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none)),
+      ),
     );
   }
 
@@ -192,73 +232,6 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
     );
   }
 
-  Padding searchTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: TextField(
-        decoration: InputDecoration(
-            suffixIcon: const Icon(
-              CupertinoIcons.search,
-              color: Colors.grey,
-              size: 29,
-            ),
-            hintText: 'Find Wallpaper...',
-            hintStyle: TextStyle(color: Colors.grey.withOpacity(0.4)),
-            filled: true,
-            fillColor: const Color(0xffeef3f5),
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide.none)),
-      ),
-    );
-  }
-
-  SizedBox theColorTone() {
-    return SizedBox(
-        height: 65,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                scrollDirection: Axis.horizontal,
-                itemCount: listColor.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        selectedIndex = index;
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  CategoryScreen(isCategory: false),
-                            ));
-                      },
-                      child: Container(
-                          width: 65,
-                          decoration: BoxDecoration(
-                              border: listColor[index] == Colors.white
-                                  ? Border.all(color: Colors.black)
-                                  : null,
-                              borderRadius: BorderRadius.circular(12),
-                              color: listColor[index])),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(
-                width: 10,
-              )
-            ],
-          ),
-        ));
-  }
-
   SingleChildScrollView BestOFTheMonth() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -316,5 +289,48 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
   }
 }
 
-// Image.network(
-//                         "${wallpaperDataModel!.photos![index].src!.portrait}");
+SizedBox theColorTone(BuildContext context) {
+  return SizedBox(
+      height: 65,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              itemCount: listColorModel.length,
+              itemBuilder: (_, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      selectedIndex = index;
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CategoryScreen(isCategory: false),
+                          ));
+                    },
+                    child: Container(
+                        width: 65,
+                        decoration: BoxDecoration(
+                            border: listColorModel[index].color == Colors.white
+                                ? Border.all(color: Colors.black)
+                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                            color: listColorModel[index].color)),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(
+              width: 10,
+            )
+          ],
+        ),
+      ));
+}
