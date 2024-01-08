@@ -2,13 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as httpClient;
+import 'package:wallpaper_app/bloc/wallpaper_bloc.dart';
 import 'package:wallpaper_app/models/api_model.dart';
+import 'package:wallpaper_app/screen/search/bloc/search_wall_bloc.dart';
 import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class SearchScreen extends StatefulWidget {
-  SearchScreen({super.key, required this.upComingsearch});
+  SearchScreen({super.key, required this.upComingsearch, required this.colorCode});
   String? upComingsearch;
+  String? colorCode;
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -19,10 +23,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    getAllSearchResults(search: '${widget.upComingsearch}');
+    BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(query: widget.upComingsearch!, colorCode: widget.colorCode ?? ""));
+    //getAllSearchResults(search: '${widget.upComingsearch}');
   }
 
-  getAllSearchResults({
+  /*getAllSearchResults({
     required String search,
   }) async {
     var apiKey = "WuSQl2o2WCR4yEHwD4fijNKVEptdFzfuFSAqPcRlie2uNuvZQnhBDMRC";
@@ -34,7 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
       searchModel = WallpaperDataModel.fromJson(rowData);
       setState(() {});
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +53,23 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(children: [
               mySearchTextField(),
               const SizedBox(height: 20),
-              searchModel != null && searchModel!.photos!.isNotEmpty
-                  ? searchPhotosGridView()
-                  : const Center(
-                      child: Text('Search Not Found'),
-                    ),
+              BlocBuilder<SearchWallBloc, SearchWallState>(builder: (_, state){
+                if(state is SearchWallLoadingState){
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if(state is SearchWallErrorState){
+                  return Center(child: Text(state.errorMsg),);
+                } else if(state is SearchWallLoadedState){
+                  searchModel = state.mData;
+                  return searchModel!.photos!.isNotEmpty
+                      ? searchPhotosGridView()
+                      : const Center(
+                    child: Text('Search Not Found'),
+                  );
+                }
+                return Container();
+              })
             ]),
           ),
         ));
@@ -64,8 +81,10 @@ class _SearchScreenState extends State<SearchScreen> {
       decoration: InputDecoration(
           suffixIcon: IconButton(
             onPressed: () {
-              getAllSearchResults(search: searchController.text.toString());
-              setState(() {});
+              /*getAllSearchResults(search: searchController.text.toString());
+              setState(() {});*/
+
+              BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(query: searchController.text.toString(), colorCode: widget.colorCode ?? ""));
             },
             icon: const Icon(
               CupertinoIcons.search,
