@@ -209,7 +209,7 @@ class _MyHomeScreenState extends State<MyHomeScreen> {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
                           return WallpaperView(
-                            image: wallpaperDataModel!
+                            imageUrl: wallpaperDataModel!
                                 .photos![index].src!.portrait
                                 .toString(),
                           );

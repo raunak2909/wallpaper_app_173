@@ -1,10 +1,12 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:wallpaper/wallpaper.dart';
 
 class WallpaperView extends StatelessWidget {
-  WallpaperView({super.key, required this.image});
-  String image;
+  WallpaperView({super.key, required this.imageUrl});
+  String imageUrl;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -14,7 +16,7 @@ class WallpaperView extends StatelessWidget {
             height: double.infinity,
             width: double.infinity,
             child: Image.network(
-              image,
+              imageUrl,
               fit: BoxFit.cover,
             ),
           ),
@@ -28,10 +30,14 @@ class WallpaperView extends StatelessWidget {
                   stackedButton(btName: 'Info', onTap: () {}, icon: Icons.info),
                   stackedButton(
                       btName: 'Save',
-                      onTap: () {},
+                      onTap: () {
+                        saveWallpaper(context);
+                      },
                       icon: Icons.save_alt_rounded),
                   stackedButton(
-                      btName: 'Apply', onTap: () {}, icon: Icons.edit),
+                      btName: 'Apply', onTap: () {
+                        applyWallpaper(context);
+                  }, icon: Icons.edit),
                 ],
               ),
             ),
@@ -39,6 +45,36 @@ class WallpaperView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void applyWallpaper(BuildContext context){
+    //Wallpaper
+    var imgStream = Wallpaper.imageDownloadProgress(imageUrl);
+
+    imgStream.listen((event) {
+      print("Event : $event");
+    }, onDone: () async{
+      //set wallpaper
+
+      var check = await Wallpaper.homeScreen(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        options: RequestSizeOptions.RESIZE_FIT
+      );
+
+      print("Result: $check");
+
+    }, onError: (e){
+      print("Error: $e");
+    });
+
+  }
+
+  void saveWallpaper(BuildContext context){
+    //GallerySaver
+    GallerySaver.saveImage(imageUrl).then((value) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Wallpaper saved!!')));
+      print('Wallpaper saved: $value');});
   }
 
   Column stackedButton(

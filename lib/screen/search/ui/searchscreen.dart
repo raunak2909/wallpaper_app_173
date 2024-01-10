@@ -10,9 +10,12 @@ import 'package:wallpaper_app/screen/search/bloc/search_wall_bloc.dart';
 import 'package:wallpaper_app/screen/wallpaper_view.dart';
 
 class SearchScreen extends StatefulWidget {
-  SearchScreen({super.key, required this.upComingsearch, required this.colorCode});
+  SearchScreen(
+      {super.key, required this.upComingsearch, required this.colorCode});
+
   String? upComingsearch;
   String? colorCode;
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -20,10 +23,30 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   WallpaperDataModel? searchModel;
   var searchController = TextEditingController();
+  ScrollController? scrollController;
+
   @override
   void initState() {
     super.initState();
-    BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(query: widget.upComingsearch!, colorCode: widget.colorCode ?? ""));
+
+    scrollController = ScrollController()
+      ..addListener(() {
+
+        print(scrollController!.position.pixels);
+
+        if (scrollController!.position.pixels ==
+            scrollController!.position.maxScrollExtent) {
+          print("End of Grid!!");
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('End of Grid!!')));
+
+
+          ///hit api again with updated pageIndex
+        }
+      });
+
+    BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(
+        query: widget.upComingsearch!, colorCode: widget.colorCode ?? ""));
     //getAllSearchResults(search: '${widget.upComingsearch}');
   }
 
@@ -48,25 +71,28 @@ class _SearchScreenState extends State<SearchScreen> {
           title: const Text('Search Photos'),
         ),
         body: SingleChildScrollView(
+          controller: scrollController,
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(children: [
               mySearchTextField(),
               const SizedBox(height: 20),
-              BlocBuilder<SearchWallBloc, SearchWallState>(builder: (_, state){
-                if(state is SearchWallLoadingState){
+              BlocBuilder<SearchWallBloc, SearchWallState>(builder: (_, state) {
+                if (state is SearchWallLoadingState) {
                   return Center(
                     child: CircularProgressIndicator(),
                   );
-                } else if(state is SearchWallErrorState){
-                  return Center(child: Text(state.errorMsg),);
-                } else if(state is SearchWallLoadedState){
+                } else if (state is SearchWallErrorState) {
+                  return Center(
+                    child: Text(state.errorMsg),
+                  );
+                } else if (state is SearchWallLoadedState) {
                   searchModel = state.mData;
                   return searchModel!.photos!.isNotEmpty
                       ? searchPhotosGridView()
                       : const Center(
-                    child: Text('Search Not Found'),
-                  );
+                          child: Text('Search Not Found'),
+                        );
                 }
                 return Container();
               })
@@ -84,7 +110,9 @@ class _SearchScreenState extends State<SearchScreen> {
               /*getAllSearchResults(search: searchController.text.toString());
               setState(() {});*/
 
-              BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(query: searchController.text.toString(), colorCode: widget.colorCode ?? ""));
+              BlocProvider.of<SearchWallBloc>(context).add(GetSearchWallPaper(
+                  query: searchController.text.toString(),
+                  colorCode: widget.colorCode ?? ""));
             },
             icon: const Icon(
               CupertinoIcons.search,
@@ -118,7 +146,8 @@ class _SearchScreenState extends State<SearchScreen> {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
                 return WallpaperView(
-                  image: searchModel!.photos![index].src!.portrait.toString(),
+                  imageUrl:
+                      searchModel!.photos![index].src!.portrait.toString(),
                 );
               },
             ));

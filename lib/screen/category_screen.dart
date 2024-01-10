@@ -84,7 +84,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
                   return WallpaperView(
-                      image: wallpaperDataModel!
+                      imageUrl: wallpaperDataModel!
                           .photos![selectedIndex].src!.portrait
                           .toString());
                 },
